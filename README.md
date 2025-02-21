@@ -1,5 +1,5 @@
-# Field data from ground truthing BDGs in Aarhus
-*pick type of repository (TOOL, ETL, ANALYSIS, ADMIN)*
+# Historical Analysis of public, private and combined (BDG, SR, and KOB) shelters in Aarhus
+*ANALYSIS*
 
 MELICA investigates the empirical basis of Cold-War preparedness in Aarhus by (1) reconstructing the everyday experience of individuals living in Cold-War Aarhus through spatial analysis of shelter locations and text analysis of written sources to assess whether the evidence points towards a militarization of everyday life or ‘normalization’ of war, (2) identifying gaps between how Cold-War civil defense was conceptualized at the national level and delivered at the local level in Aarhus, and (3) evaluating civil defense effectiveness by simulating a shelter drill, identifying weak points and stakeholders in civil defense planning.
 
@@ -8,13 +8,12 @@ The roadmap to accomplish our goals combines three research activities:
 * Creation of a thematic digital archive focused on the civil defense from materials present in the Aarhus City Archive
 * Smart text and spatial analysis of the two archives :smile:
 
-This repository serves to store scripts related to the first objective: the processing of field captured data during 2023 with FAIMS v2.6 and 2024 with Fieldmark v1.0, including the combination of data captured via the online and local servers!
+This repository explores the third research objective: historical evolution of shelters over time.
 
 ---
 
 ## Purpose
-Collect, reconcile and merge field-collected data on shelters, to map our their 2024 status quo, afterlife, landuse and utilization.
-The product is a master dataset with ground-truthed data.
+Construct timeseries of BDG, SR, and KOBs so we can reconstruct how many were on the ground in each decade of the twentieth century and how their location varied over time.
 
 ---
 ## Authors
@@ -36,10 +35,9 @@ CC-BY-SA 4.0, see attached License.md
 # How to use this repository
 
 ## Sources and prerequisites
-[Describe the provenance of data used in the scripts contained and clarify how it is harvested and what other prerequisites are required to get the scripts working. In case of pure tool attribute any reused scripts to source, etc., license and specify any prerequisites or technical requirements.]
 
 ### Data
-Anything else on data metadata and data used. Link to data repository or explanatory article. 
+Streamlined data on BDG-long, SR, KOB, and supplementary shelters needed. Load it from shelter-data if need be.
 
 ### Software
 1. Software X, minimum version 123
