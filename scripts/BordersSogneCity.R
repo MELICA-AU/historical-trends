@@ -3,14 +3,17 @@
 
 library(sf)
 library(mapview)
+library(tidyverse)
 
 #install.packages("geodata")
 library(geodata)
 
-########### Get Denmark boundary
+########### Get Denmark and Aarhus municipal boundary
 
-dk <- gadm(country = "DNK", level = 0, path = "data/")
-
+dk <- gadm(country = "DNK", level = 2, path = "data/")
+aa_mun <- dk %>% st_as_sf() %>% filter(NAME_2 == "Århus")
+plot(aa_mun)
+st_write(aa_mun, "data/aarhus_mun.geojson")
 
 ############### Get World Cities
 

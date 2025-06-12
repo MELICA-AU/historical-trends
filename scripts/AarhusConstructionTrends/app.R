@@ -22,8 +22,8 @@ library(tidyverse)
 
 # SR : Private shelter locations and buildings in Aarhus
 SR <- st_read("../output_data/SK_bbr_oc_addresses.geojson")
-SR <- SR %>% 
-  rename(ID = id_lokalId, byg026Year = byg026Opførelsesår, places = byg069Sikringsrumpladser)
+#SR <- SR %>% 
+#  rename(ID = id_lokalId, byg026Year = byg026Opførelsesår, places = byg069Sikringsrumpladser)
 
 bbr_aarhus_data_flat <- readRDS("../output_data/bbr_residential_aarhus.rds")
 
@@ -32,15 +32,16 @@ aarhus_districts <- st_read("https://sciencedata.dk/public/67e2ad2ca642562dacfa6
 
 # Polygons with data on new buildings: intersections of the district polygons and the point data from BBR
 intersections_aarhus <- st_intersection(aarhus_districts,bbr_aarhus_data_flat) %>% 
-  dplyr::select(id = id_lokalId, navn = prog_distrikt_navn, byg021BygningensAnvendelse,byg026Year, decade, byg054AntalEtager,byg406Koordinatsystem,city,geometry)
+  dplyr::select(id = id_lokalId, navn = prog_distrikt_navn, 
+                byg021BygningensAnvendelse,byg026Year, decade, byg054AntalEtager,byg406Koordinatsystem,city,geometry)
 
 # Project polygons to EPSG 4326
 intersections_aarhus <- st_transform(intersections_aarhus, 4326)  # Polygons
 
 
-# Load custom functions to select a year or a range of years
+# Load custom functions to select a year or a range of years in WHAT data?
 get_year_df <- function(df, year){
-  temp_df <- df %>% filter(byg026Year %in% year)
+  temp_df <- df %>% filter(byg026Year %in% year) ## ADDRESS
   return(temp_df)
 }
 
@@ -77,10 +78,10 @@ draw_choropleth <- function(year){
   
   SR_popups <- sprintf(
     "<strong>%s</strong><br/>%g Capacity",
-    temp_df_SR$oc_formatted, temp_df_SR$places
+    temp_df_SR$status, temp_df_SR$places
   ) %>% lapply(htmltools::HTML)
   
-  map_title <- paste0("Showing year(s) ", year_range)
+  map_title <- paste0("Showing private shelters and residential construction in year(s) ", year_range)
   
   choro <- leaflet() %>%
     addProviderTiles("CartoDB.Positron") %>%
