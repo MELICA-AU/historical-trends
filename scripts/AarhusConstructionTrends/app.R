@@ -21,11 +21,11 @@ library(tidyverse)
 # Assuming the required data is already loaded:
 
 # SR : Private shelter locations and buildings in Aarhus
-SR <- st_read("../output_data/SK_bbr_oc_addresses.geojson")
+SR <- st_read("../../../shelter-data/output_data/SR.geojson")
 #SR <- SR %>% 
 #  rename(ID = id_lokalId, byg026Year = byg026Opførelsesår, places = byg069Sikringsrumpladser)
 
-bbr_aarhus_data_flat <- readRDS("../output_data/bbr_residential_aarhus.rds")
+bbr_aarhus_data_flat <- readRDS("../../data/bbr_residential_aarhus.rds")
 
 # Polygons for Aarhus district in geoJSON format for mappable results
 aarhus_districts <- st_read("https://sciencedata.dk/public/67e2ad2ca642562dacfa6fdf672a1009/aarhus_districts.geojson")
