@@ -87,13 +87,17 @@ glimpse(BDG)
 ### -------------  LOAD BDG WIDE data from 2024
 
 # All shelters sheet with long format where temporal changes are represented
-BDGw <- readRDS("output_data/BDG_wide.rds")
+BDGw <- readRDS("../shelter-data/output_data/BDG_wide2024.rds") %>% 
+  rename(verified = FAIMS_verified)
 glimpse(BDGw)
 
 
 ### -------------  Prep additional map components
+tm_shape(World, crs = 3035, bb = "Europe") +
+  tm_polygons()
 
-install.packages("geodata")
+#install.packages("geodata")
+
 library(geodata)
 
 dk <- gadm(country = "DNK", level = 0, path = "data/")
@@ -111,31 +115,36 @@ dk_bbox <- st_as_sfc(st_bbox(c(xmin = 8.07, ymin = 54.5, xmax = 13, ymax = 58), 
 mapview(dk_bbox)
 
 # Aarhus Boundary
-aa_1952 <- read_sf("data/georeferenced/AarhusBorderVectors/Poly1952.shp")
-aa_1956 <- read_sf("data/georeferenced/AarhusBorderVectors/Poly1956.shp")
-mapview(aa_1952)
-mapview(aa_1956)
+aa_1952 <- read_sf("data/Topo/Borders/Poly1952.shp")
+aa_1956 <- read_sf("data/Topo/Borders/Poly1956.shp")
+aa_1988 <- read_sf("data/Topo/Borders/Poly1988.shp")
 
+
+mapview(aa_1988) + mapview(aa_1952, col.regions = "orange")+ mapview(aa_1956, col.regions = "pink")
 
 ############## --------------- Create a full map interactive
 
-tmap_mode(mode = "view")
+conflicts(detail = TRUE) |>
+  purrr::keep(~"tm_shape" %in% .x)
 
-tm_shape(SR_89) +
-  #tm_basemap("CartoDB.Positron") +  # CartoDB.Positron as the basemap
-  tm_dots(col = "decade", 
-          palette = "viridis", 
-          title = "Decade",
-          size = "places",  # Adjust the size of the points
-          alpha = 0.8) +  # Transparency level
+
+tmap_mode(mode = "plot")
+
+tm_shape(shp = SR_89) +
+  #tm_basemap("CartoDB.Positron") + # CartoDB.Positron as the basemap
+  tm_dots(
+    fill = "decade",
+    size = "places",
+    fill_alpha = 0.8,
+    fill.scale = tm_scale(values = "viridis", label = "Decade"),
+    fill.legend = tm_legend(position = c("right", "bottom"))) +
   tm_shape(aarhus_bbox_sm) +
-  tm_borders(lwd = 2, col = "red") +  # Bounding box around Aarhus
-  tm_shape(area) +
-  tm_borders(lwd = 2, col = "orange") +  # Circle around DGB
-  tm_layout(title = "Private shelter construction in Aarhus",
-            legend.position = c("right", "bottom"),
-            frame = FALSE) +  # Remove outer frame
-  tm_compass(type = "8star", position = c("left", "top"))  # North arrow
+  tm_borders(lwd = 2, col = "red") +
+  tm_shape(aa_1988) +
+  tm_borders(lwd = 2, col = "orange") +
+  tm_title("Private shelter construction in Aarhus") +
+  tm_compass(type = "8star", position = c("left", "top")) +
+  tm_layout(frame = FALSE)
 
 
 
@@ -143,38 +152,46 @@ tm_shape(SR_89) +
 
 tmap_mode(mode = "plot")
 
-# Create the main map
-main_map <- tm_shape(dk, bbox = aarhus_bbox_m) +
-#  tm_borders(lwd = 2, col = "grey") +  # Coastline of Aarhus
-  tm_polygons(col = "white")+
+main_map <-
+  tm_shape(dk, bbox = aarhus_bbox_m) +
+  tm_polygons(fill = "white") +
+  
   tm_shape(SR_89) +
-  tm_dots(col = "decade", 
-          palette = "viridis", 
-          title = "Decade",  # Label for the color legend
-          size = "places",  # Adjust the size of the points
-          title.size = "Capacity",  # Label for the size legend
-          scale = 1.5,  # Increase the size of all symbols by 1.5 times
-          legend.is.portrait = TRUE,
-          alpha = 0.8) +  # Transparency level
+  tm_dots(
+    fill = "decade",
+    size = "places",
+    fill_alpha = 0.8,
+    fill.scale = tm_scale(values = "viridis", label = "Decade"),
+    #size.scale = tm_scale_continuous(label = "Places", values.scale = 1.5),
+    fill.legend = tm_legend(orientation = "portrait")
+  ) +
   
-  tm_shape(sh_merged) +
-    tm_squares(size = 0.1, col = "Verified", palette = c("white", "grey9"))+
+  tm_shape(BDGw) +
+  tm_squares(
+    size = 0.1,
+    fill = "verified",
+     fill.scale = tm_scale(values = c("white", "grey9"))) +
+  # city borders over time
+  tm_shape(aa_1952) +
+  tm_borders(lwd = 1, col = "darkgrey", lty = "dotted") +
+  tm_shape(aa_1988) +
+  tm_borders(lwd = 2, col = "grey") +
   
-  tm_layout(title = "Shelter construction in Aarhus municipality",
-            #legend.position = c("right", "bottom"),
-            legend.position = c("left", "top"),
-            legend.title.size = 1.2,  # Adjust the size of the legend title
-            legend.text.size = 0.8,  # Adjust the size of the legend text
-            legend.stack = "vertical",  # Stack the legends vertically
-            frame = TRUE,  # Remove outer frame
-            bg.color = "grey85") + # Set the background color to a light grey  
- 
-  tm_compass(type = "8star", position = c("right", "bottom")) +  # North arrow
-  tm_scale_bar(position = c("right", "bottom"))  # Scale bar
+  tm_title("Shelter construction in Aarhus") +
+  tm_legend(
+    position = c("left", "top"),
+    title.size = 1.2,
+    text.size = 0.8,
+    stack = "vertical"
+  ) +
+  tm_layout(
+    frame = TRUE,
+    bg.color = "grey85"
+  ) +
+  tm_compass(type = "8star", position = c("right", "bottom")) +
+  tm_scalebar(position = c("right", "bottom"))
 
 main_map
-
-
 # Create the inset map of Denmark
 
 inset_map <- tm_shape(st_as_sf(dk), bbox = dk_bbox) +
@@ -204,7 +221,7 @@ tiff("figures/SK_BTG_decade_map.tiff", width = 7, height = 10, units = "in", res
 print(main_map)
 
 # Overlay the inset map
-vp_inset <- viewport(width = 0.3, height = 0.3, x = 0.07, y = 0.01, just = c("left", "bottom"))
+vp_inset <- viewport(width = 0.3, height = 0.3, x = 0.1, y = 0.01, just = c("left", "bottom"))
 print(inset_map, vp = vp_inset)
 
 # Close the TIFF device
@@ -212,47 +229,51 @@ dev.off()
 
 ############## -------------------------------------  TMAP FACETTED PRIVATE SHELTERS OVER DECADES
 
+library(tmap)
 
-
-tmap_options(limits = c(facets.view = 6))  # we want to view 5 periods
 tmap_mode("plot")
 
-# Create the facetted map
-facetted_map <- tm_shape(st_as_sf(dk), bbox = aarhus_bbox_m) +
-  tm_borders(lwd = 2, col = "grey") +  # Coastline of Aarhus
-  tm_shape(st_as_sf(dk))+
-    tm_polygons(col = "white")+
+facetted_map <-
+  tm_shape(st_as_sf(dk), bbox = aarhus_bbox_m) +
+  tm_borders(lwd = 2, col = "grey") +
+  tm_polygons(fill = "white") +
+  tm_shape(aa_1952) +
+  tm_borders(lwd = 1, col = "darkgrey", lty = "dotted") +
   tm_shape(SR_89) +
   tm_dots(
-    col = "decade", 
-    size = "places",  # Use 'capacity' for size
-    palette = "viridis", 
-    title.size = "Capacity",  # Label for the size legend
-    legend.show = FALSE,  # Hide the Decade legend
-    scale = 1.5,  # Increase the size of all symbols by 1.5 times
-    #legend.is.portrait = TRUE,
-    alpha = 0.8  # Transparency level
+    fill = "decade",
+    size = "places",
+    fill.scale = tm_scale(values = "viridis"),
+   # size.scale = tm_scale_continuous(label = "Capacity", values.scale = 1.5),
+    fill_alpha = 0.8,
+    fill.legend = tm_legend_hide()
   ) +
+  
   tm_facets(
-    by = "decade",  # Create facets by decade
+    by = "decade",
     ncol = 3,
-    free.coords = FALSE  # Keep the same coordinates for all facets
+    nmax = 6,
+    free.coords = FALSE
   ) +
+  
   tm_layout(
-     bg.color = "grey80",  # Consistent light grey background
-     panel.label.size = 1.5,  # Adjust the size of facet labels
-    outer.margins = 0.02,  # Reduce outer margins
-    inner.margins = 0.05,  # Adjust inner margins
-    legend.outside = TRUE,  # Place the legend outside the plotting area
-    legend.outside.position = "bottom",  # Ensure the legend is at the bottom
-   ) +
-  tm_compass(type = "arrow", 
-             position = c("left", "top")) +  # North arrow positioned outside the facets
-  tm_scale_bar(
-    #color.dark = TRUE ,  # Set the color of the line and notches
-    breaks = c(0, 5),  # Set scale bar to 5 km only
-    text.size = 0.8,  # Adjust text size
-    position = c("left", "bottom")  # Position scale bar on the left
+    bg.color = "grey80",
+    panel.label.size = 1.5,
+    outer.margins = 0.02,
+    inner.margins = 0.05,
+    legend.outside = TRUE,
+    legend.outside.position = "bottom"
+  ) +
+  
+  tm_compass(
+    type = "arrow",
+    position = c("left", "top")
+  ) +
+  
+  tm_scalebar(
+    breaks = c(0, 5),
+    text.size = 0.8,
+    position = c("left", "bottom")
   )
 
 # View the facetted map

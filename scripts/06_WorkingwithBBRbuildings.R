@@ -1,8 +1,17 @@
-############### Buildings IN BBR
 
+###################################################################
+#
+############### Buildings IN BBR
+#
+#####################################
+#
 ## This code was first developed by @JakobJM (Jakob Mørup) for 2021 CDS project visualizing urban development 
 # of Aarhus and Copenahgen in 1990-1999, openly shared in his  Github repository
 # bbhttps://github.com/Jakobjm/Project_Cultural_Data_Science/blob/master/data_visualisation.Rmd
+
+# This script shows how the 2021 BBR data on buildings in Aarhus was processed in the original MELICA repository
+# so these can be used by the MELICA project.
+# This script stands behind the BBR and SR datasets used in the MELICA-AU repository
 
 # library 
 library(jsonlite)
@@ -13,7 +22,7 @@ library(sf)
 # bbr_aarhus_data <- fromJSON("https://sciencedata.dk/public/67e2ad2ca642562dacfa6fdf672a1009/clean_BBR_aarhus_data.json")
 # saveRDS(bbr_aarhus_data, "data/bbr_aar_list.rds")
 
-bbr_aarhus_data <- readRDS("data/bbr_aar_list.rds")
+bbr_aarhus_data <- readRDS("../../MELICA/data/bbr_aar_list.rds")
 
 #flattening it to a data frame and changing the name of a column to get rid of danish letters
 flatten <- function(json){
@@ -63,8 +72,8 @@ bbr_aarhus_data_flat <-bbr_aarhus_data %>%
   mutate(city = "Aarhus")%>% 
   st_as_sf(wkt = "byg404Koordinat", crs = 25832)
 
-saveRDS(bbr_aarhus_data_flat,"output_data/bbr_residential_aarhus.rds")
-saveRDS(all_bbr_aarhus,"output_data/bbr_all_aarhus.rds")
+#saveRDS(bbr_aarhus_data_flat,"output_data/bbr_residential_aarhus.rds")
+#saveRDS(all_bbr_aarhus,"output_data/bbr_all_aarhus.rds")
 
 # # trying the sikringsrum code "236" but to no avail >> no records
 # bbr_aarhus_sikring <- bbr_aarhus_data_flat %>% 
@@ -149,7 +158,7 @@ bbr_aarhus_data_flat %>%
 #Creating choropleth overlays on basemaps from OpenStreetMaps, showing the number of new buildings by districs in a given year or range of years
 ################################################################################
 # Private shelter locations
-SR <- st_read("output_data/SK_bbr_oc_addresses.geojson")
+SR <- st_read("../../MELICA/output_data/SK_bbr_oc_addresses.geojson")
 SR <- SR %>% 
   rename(ID = id_lokalId, byg026Year = byg026Opførelsesår, places = byg069Sikringsrumpladser)
 
