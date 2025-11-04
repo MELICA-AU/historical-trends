@@ -28,4 +28,7 @@ Streamlined data on BDG-long, SR, KOB, and supplementary shelters data used in t
 ### Software
 1. R 4.3.3
 
+## Results
+![Example map](./figures/Figure06.png)
+
 
