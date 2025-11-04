@@ -1,5 +1,5 @@
 # Historical analysis of public, private and combined shelters in Aarhus
-*ANALYSIS
+*VISUALISATION
 
 This repository collects the three types of shelters constructed in Aarhus between 1945-1989, digitized by MELICA and supplied with geometries on the basis of shelter records and maps in the Civil Defense Commission's archive in Aarhus. Shelters geometries are plotted them in space as well as over time in order to illustrate and explore the historical evolution of the city's preparedness plans and the spatial distribution of civil-defence amenities. It underpins spatial equity and adequacy research, and ABM modelling. 
 
