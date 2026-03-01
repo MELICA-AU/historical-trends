@@ -17,7 +17,7 @@ library(tmap)
 
 ### ------------- LOAD SR PRIVATE SHELTERS LOCAL
 
-SR <- st_read("../shelter-data/output_data/SR.geojson")
+SR <- st_read("../../shelter-data/output_data/SR.geojson")
 names(SR)
 
 mapview(SR)

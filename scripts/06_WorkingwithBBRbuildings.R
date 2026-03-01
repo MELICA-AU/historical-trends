@@ -22,8 +22,11 @@ library(sf)
 # bbr_aarhus_data <- fromJSON("https://sciencedata.dk/public/67e2ad2ca642562dacfa6fdf672a1009/clean_BBR_aarhus_data.json")
 # saveRDS(bbr_aarhus_data, "data/bbr_aar_list.rds")
 
-bbr_aarhus_data <- readRDS("../../MELICA/data/bbr_aar_list.rds")
+bbr_aarhus_data <- readRDS("../../MELICA/data/bbr_aar_list.rds") # old system
 
+bbr_aarhus_data <- readRDS("../data/bbr_all_aarhus.rds") # melica-au file system
+
+unique(bbr_aarhus_data$byg021BygningensAnvendelse)
 #flattening it to a data frame and changing the name of a column to get rid of danish letters
 flatten <- function(json){
   json <- as.data.frame(json[["BygningList"]])
