@@ -1,15 +1,22 @@
 ### 1952 ABM results
-
+library(sf)
+library(tidyverse)
 
 # Figures 4 & 5 - within 5 min, nearest 3 shelters
 # city with districts (postal codes) and shelters showing unused ones
-# close up on Ringgade with shelter sizes and colorshading showing under/over utilisation
+# close up on Ringgade with shelter sizes and colorshading showing 
+# under/over utilisation at 10 min interval
 
+source("01_LoadDataPP.R")
 
 ### ---------------- load ABM data and districts 
 day <- read_rds("../data/abm/shelter_arrivals_ranked_day_baseline_nearest_3.RDS")
-night <- read_rds("../data/abm/shelter_arrivals_ranked_night_baseline_nearest_3.RDS")
-head(day)
+#night <- read_rds("../data/abm/shelter_arrivals_ranked_night_baseline_nearest_3.RDS")
+districts <- read_sf("../data/postnummerinddeling.geojson") %>% 
+  st_intersection(st_geometry(st_transform(city, 4326)))
+
+plot(districts$geometry)
+centroids <- st_centroid(districts)
 
 library(purrr)
 
@@ -26,18 +33,8 @@ summary_day <- day %>%
   as_tibble()
 
 
-summary_night <- night %>%
-  imap_dfr(~ .x %>%
-             summarise(
-               arrivals_5min  = sum(arrival_time <= 300, na.rm = TRUE),
-               arrivals_over5min  = sum(arrival_time > 300, na.rm = TRUE),
-               arrivals_10min = sum(arrival_time <= 600, na.rm = TRUE)
-             ) %>%
-             mutate(shelter_id = .y),
-           .id = NULL) %>%
-  relocate(shelter_id) %>% 
-  as_tibble()
 
+### ------------ DAY TIME SHELTERING RESULTS -------------------
 
 shelters5min <- shelters %>% 
   left_join(summary_day, by = c("shelterID" = "shelter_id")) %>% 
@@ -72,11 +69,12 @@ shelters_5m_cap <- shelters5min %>%
     under_by = pmax(-diff_5min, 0)         # how many under
   )
 
-# test day sheltering results
+# test view of day sheltering results
 mapview(shelters5min, zcol = "status_5min", cex = "pct_used_5min") # are all our agents unique (only shelter  once?)
 
 
-### ---------- MAP library(tmap)
+### ---------- MAPPING DAYTIME RESULTS ---------------------
+
 shelters_5m_cap[,6:11]
 
 # Map percent over
@@ -91,13 +89,11 @@ shelters_5m_cap <- shelters_5m_cap %>%
         labels = c("Small", "Medium", "Large"),
         include.lowest = TRUE,
         right = TRUE
-      )) %>%   
-        # subtracting 100% so as to get at underused shelters
-      mutate(
-        
-      )
+      ))
       
-# Divergent map
+#### ------------- Divergent map
+library(tmap)
+
 load_pct <- tm_shape(st_transform(city, 4326)) +
   tm_borders(
     col = "grey",
@@ -105,11 +101,21 @@ load_pct <- tm_shape(st_transform(city, 4326)) +
     col.legend = tm_legend(title = "City boundary")
   ) +
 
+  tm_shape(districts) +
+  tm_borders(
+    col = "grey",
+    lwd = 1,
+    lty = "dashed"
+    ) +
+  tm_labels("navn",
+            size = 1,
+            col = "grey"
+            ) +
 
 tm_shape(shelters_5m_cap) +
   tm_symbols(
     fill  = "pct_dev_5min",         #pct_used_5min is another option for percentage used in 5 mins
-    shape = 21,
+    shape = 24,
     
     size = "seats_class", # size driven by capacity, color by stress
     size.scale = tm_scale_categorical(values = c(Small = 0.5, Medium = 0.9, Large = 1.2)),
@@ -136,16 +142,16 @@ tm_shape(shelters_5m_cap) +
             legend.stack = "vertical",
             legend.spacing = 1.5        # increase space between legends
            ) +
-  tm_title("Shelter (nearest-3) load at 5 minutes") +
+  tm_title("Shelter (nearest-3) load at 5 minutes: daytime scenario") +
   tm_scalebar(position = c("left", "bottom"),
               breaks = c(0, 0.5, 1.0, 1.5),  # 3 segments of 0.5 km
               text.size = 0.7) 
 
 load_pct
 
-tmap_save(load_pct, "load_5m_pct.png", width = 8, height = 8, units = "in", dpi = 600)
+tmap_save(load_pct, "../figures/Fig4_dayload5m_di_tri.png", width = 8, height = 8, units = "in", dpi = 600)
 
-# Working ascending scale for overload only
+### -------------- Sequential scale 
 
 overload_pct <- tm_shape(st_transform(city, 4326)) +
   tm_borders(
@@ -153,10 +159,20 @@ overload_pct <- tm_shape(st_transform(city, 4326)) +
     lwd = 3,
     col.legend = tm_legend(title = "City boundary")
   ) +
+  tm_shape(districts) +
+  tm_borders(
+    col = "grey",
+    lwd = 1,
+    lty = "dashed"
+  ) +
+  tm_labels("navn",
+            size = 1,
+            col = "grey"
+  ) +
   tm_shape(shelters_5m_cap) +
   tm_symbols(
     fill  = "pct_used_5min",         #pct_used_5min is another option for percentage used in 5 mins
-    shape = 21,
+    shape = 24,
     
     size = "seats_class", # size driven by capacity, color by stress
     size.scale = tm_scale_categorical(values = c(Small = 0.5, Medium = 0.9, Large = 1.2)),
@@ -170,30 +186,195 @@ overload_pct <- tm_shape(st_transform(city, 4326)) +
   ) +
   
   tm_layout(frame = FALSE) +
-  tm_title("Shelter (nearest-3) load at 5 minutes") +
+  tm_title("Shelter (nearest-3) load at 5 minutes: daytime scenario") +
   tm_scalebar(position = c("left", "bottom"),
               breaks = c(0, 0.5, 1.0, 1.5),  # 3 segments of 0.5 km
               text.size = 0.7) 
 
-tmap_save(overload_pct, "overload_5m_pct.png", width = 8, height = 8, units = "in", dpi = 600)
+overload_pct
 
-### not used below yet
+tmap_save(overload_pct, "../figures/Fig4_dayload5m_tri.png", width = 8, height = 8, units = "in", dpi = 600)
 
-m_cap_5 <- tm_shape(shelters_5m_cap) +
-  tm_symbols(
-    fill  = "diff_5min",                  # arrivals_5min - Seats
-    size = "arrivals_5min",              # optional: or use "abs_diff_5min" (see below)
-    shape = 21,
-    fill.scale  = tm_scale_continuous(
-      midpoint = 0,
-      values = c("steelblue4", "white", "firebrick3")   # under -> at -> over
+#######################################################
+
+#########     ---------- FIGURE 05 -- ZOOM in figure
+
+# Zoom to downtown
+venue <- sf::st_sfc(sf::st_point(c(10.1934814423502, 56.1587545885577)), crs = 4326)
+area <- venue %>% 
+  st_buffer(1600)
+
+# Preparation of data
+shelters10min <- shelters %>% 
+  left_join(summary_day, by = c("shelterID" = "shelter_id")) %>% 
+  mutate( # core metrics
+    diff_10min = arrivals_10min - Seats,                 # + = over, - = under
+    pct_used_10min = 100 * arrivals_10min / Seats,       # % of capacity used
+    
+    # guard rails
+    pct_used_10min = if_else(is.finite(pct_used_10min), 
+                             pct_used_10min, NA_real_),
+    
+    status_10min = case_when(
+      is.na(Seats) ~ "missing capacity",
+      Seats <= 0 ~ "zero capacity",
+      diff_10min > 0 ~ "over capacity",
+      diff_10min == 0 ~ "at capacity",
+      diff_10min < 0 ~ "under capacity"
     ),
-    col.legend  = tm_legend(title = "5-min capacity\n(+ over, − under)"),
-    size.scale  = tm_scale_continuous(values = c(0.03, 0.12)),
-    size.legend = tm_legend(title = "Arrivals ≤ 5 min")
-  ) +
-  tm_layout(frame = FALSE) +
-  tm_title("Shelter load at 5 minutes") +
-  tm_scalebar()
+    seats_class = cut(
+      Seats,
+      breaks = c(-Inf, 50, 200, Inf),
+      labels = c("Small (<50)", "Medium (51-200)", "Large (201-550)"),
+      include.lowest = TRUE,
+      right = TRUE
+    ))
 
-m_cap_5
+sort(unique(shelters$Seats))
+shelters10min$seats_class
+shelters10min %>% select(Seats, arrivals_10min, diff_10min, pct_used_10min)
+max(shelters10min$pct_used_10min, na.rm = T)
+
+# Map percent over
+shelters_10m_cap <- shelters10min %>%  # 4 size classes based on overload 
+  st_filter(st_buffer(area,500), .predicate = st_intersects)  %>% 
+  mutate(overload_class = cut(
+           pct_used_10min,
+           breaks = c(-Inf, 100, 250, 500, Inf),
+           labels = c("≤100%", "101–250%", "251–500%", ">500%"), 
+           include.lowest = TRUE,
+           right = TRUE ),
+        overload_class = factor(
+               overload_class,
+               levels = c("≤100%", "101–250%", "251–500%", ">500%"),
+               ordered = TRUE)) %>% 
+  filter(!is.na(overload_class))
+
+which(is.na(shelters_10m_cap$overload_class))
+
+
+
+### -------------- Sequential scale BLUE and YR; size true
+
+
+overload_pct <- tm_shape(districts, bbox = area) +
+  tm_borders(
+    col = "grey",
+    lwd = 1,
+    lty = "dashed"
+  ) +
+  tm_labels("navn",
+            size = 1,
+            col = "grey"
+  ) +
+  tm_shape(shelters_10m_cap) +
+   tm_symbols(
+    shape = 24,
+    
+    #size = 2,
+    size = "seats_class", # size driven by capacity, color by stress
+    size.scale = tm_scale_categorical(values = c(`Small (<50)` = 0.7,
+                                                 `Medium (51-200)` = 1.3, 
+                                                 `Large (201-550)` = 1.6)),
+    size.legend = tm_legend(title = "Shelter capacity"),
+    
+    fill = "overload_class",
+    
+    fill.scale = tm_scale_categorical(  #"≤100", "101–250%", "251–500%", ">500%"
+# for yellow, uncomment the lines below
+      values = c(
+          "≤100%" = "#ffffcc",
+          "101–250%" = "#fed976",
+          "251–500%" = "#fd8d3c",
+          ">500%" = "#bd0026" )
+    ),
+      # for blue, activate the lines below
+    #   values = c(
+    #     "≤100%" = "#f7fbff",
+    #     "101–250%" = "#c6dbef",
+    #     "251–500%" = "#6baed6",
+    #     ">500%" = "#08306b"
+    #   )
+    # ),
+    
+    fill.legend = tm_legend(title = "% capacity used"),
+    col = "grey20"
+  ) +
+  
+    tm_title("Shelter (nearest-3) load at 10 minutes: daytime scenario")  
+  
+
+  tm_layout(
+    frame = FALSE,
+    legend.outside = TRUE,
+    legend.outside.position = "right") +
+
+  tm_scalebar(position = c("left", "top"),
+              breaks = c(0, 0.5, 1),  # 3 segments of 0.5 km
+              text.size = 0.7) 
+
+overload_pct
+
+tmap_save(overload_pct, "../figures/Fig5_dayload10m_sizetrueBL.png", width = 6, height = 4, units = "in", dpi = 600)
+#yellow
+tmap_save(overload_pct, "../figures/Fig5_dayload10m_sizetrueYR.png", width = 10, height = 8, units = "in", dpi = 600)
+
+
+
+### -------------- Sequential scale BLUE and YR; size by overload
+
+
+
+overload_size <- tm_shape(districts, bbox = area) +
+  tm_borders(
+    col = "grey",
+    lwd = 1,
+    lty = "dashed"
+  ) +
+  tm_labels("navn",
+            size = 1,
+            col = "grey"
+  ) +
+  tm_shape(shelters_10m_cap) +
+  tm_symbols(
+    shape = 24,
+    size = "overload_class", # size driven by capacity, color by stress
+    size.scale = tm_scale_categorical(values = c(
+      "≤100%" = 0.6,
+      "101–250%" = 0.9,
+      "251–500%" = 1.2,
+      ">500%" = 1.5
+    )),
+    size.legend = tm_legend(title = "Shelter overload"),
+    
+    fill = "overload_class",
+    
+    fill.scale = tm_scale_categorical(  #"≤100", "101–250%", "251–500%", ">500%"
+      # for yellow, uncomment the lines below
+      #   values = c(
+      #       "≤100%" = "#ffffcc",
+      #       "101–250%" = "#fed976",
+      #       "251–500%" = "#fd8d3c",
+      #       ">500%" = "#bd0026" )
+      # ),
+      # for blue, activate the lines below
+      values = c(
+        "≤100%" = "#f7fbff",
+        "101–250%" = "#c6dbef",
+        "251–500%" = "#6baed6",
+        ">500%" = "#08306b"
+      )
+    ),
+    
+    fill.legend = tm_legend(title = "% capacity used"),
+    col = "grey20"
+  ) +
+  
+  tm_title("Shelter (nearest-3) load at 10 minutes: daytime scenario")  
+
+
+overload_size
+
+tmap_save(overload_size, "../figures/Fig5_dayload10m_BL.png", width = 10, height = 8, units = "in", dpi = 600)
+#yellow
+tmap_save(overload_size, "../figures/Fig5_dayload10m_YR.png", width = 10, height = 8, units = "in", dpi = 600)

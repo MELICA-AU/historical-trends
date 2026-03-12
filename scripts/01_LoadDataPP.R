@@ -8,6 +8,14 @@ library(mapview)
 # Choose either 1952 or 1986 to get status in 1951 (post-war) or 1985 (nuclear re-awakening)
 year_filter <- 1952  
 
+### ------------- Aarhus City Boundary
+ifelse(year_filter == 1952, 
+city <- read_sf("../data/Topo/AngelDigitizedAarhusBorders/Poly1952.shp") %>% 
+  st_transform(crs = 25832), 
+# city <- read_sf("../data/Topo/Borders/Poly1956.shp")
+  city <- read_sf("../data/Topo/AngelDigitizedAarhusBorders/Poly1988.shp"))
+
+
 ### ------------- Shelters ---
 
 # ---- BDG
@@ -131,7 +139,7 @@ library(geodata)
 
 #
 ###-------------  Danish border
-dk <- gadm(country = "DNK", level = 0, path = "data/")
+#dk <- gadm(country = "DNK", level = 0, path = "data/")
 
 dk <- read_rds("../data/gadm/gadm41_DNK_0_pk.rds") %>% 
   terra::unwrap() 
@@ -140,22 +148,16 @@ dk32 <- dk %>%
  st_transform(25832)
 
 # Create a bounding box for Aarhus if you don't have a shapefile
-aarhus_bbox_sm <- st_as_sfc(st_bbox(c(xmin = 10.1, ymin = 56.1, xmax = 10.25, ymax = 56.2), crs = st_crs(4326)))
-aarhus_bbox_m <- st_as_sfc(st_bbox(c(xmin = 10.05, ymin = 56.05, xmax = 10.28, ymax = 56.25), crs = st_crs(4326)))
-aarhus_bbox <- st_as_sfc(st_bbox(c(xmin = 9.99, ymin = 56.0, xmax = 10.35, ymax = 56.3), crs = st_crs(4326)))
-mapview(aarhus_bbox_m)
+# aarhus_bbox_sm <- st_as_sfc(st_bbox(c(xmin = 10.1, ymin = 56.1, xmax = 10.25, ymax = 56.2), crs = st_crs(4326)))
+# aarhus_bbox_m <- st_as_sfc(st_bbox(c(xmin = 10.05, ymin = 56.05, xmax = 10.28, ymax = 56.25), crs = st_crs(4326)))
+# aarhus_bbox <- st_as_sfc(st_bbox(c(xmin = 9.99, ymin = 56.0, xmax = 10.35, ymax = 56.3), crs = st_crs(4326)))
+# mapview(aarhus_bbox_m)
 
 # Skip Bornholm
 dk_bbox <- st_as_sfc(st_bbox(c(xmin = 8.07, ymin = 54.5, xmax = 13, ymax = 58), 
                              crs = st_crs(4326)))
-mapview(dk_bbox)
 
 
-### ------------- Aarhus City Boundary
-city <- read_sf("../data/Topo/Borders/Poly1952.shp") %>% 
-  st_transform(crs = 25832)
-# aa_1956 <- read_sf("../data/Topo/Borders/Poly1956.shp")
-# aa_1988 <- read_sf("../data/Topo/Borders/Poly1988.shp")
 
 ### ------------- Prep Roads & Communications
 
@@ -180,9 +182,9 @@ rail <- read_sf("../data/jernbane_historisk_v05042013/jernbane_historisk.shp") %
    st_filter( st_transform(aarhus_bbox,crs = 25832), .predicate = st_intersects) 
 unique(rail$closed)  
 
-rail <- read_sf("../data/DNK_railway.gpkg") %>% 
-  st_filter(aarhus_bbox, .predicate = st_intersects) %>% 
-  st_transform(crs = 25832) 
+# rail <- read_sf("../data/DNK_railway.gpkg") %>% 
+#   st_filter(aarhus_bbox, .predicate = st_intersects) %>% 
+#   st_transform(crs = 25832) 
 
 
 ###------------- Historical maps
